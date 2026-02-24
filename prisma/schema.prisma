@@ -7,10 +7,85 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-    id        String   @id @default(uuid())
-    email     String   @unique
-    name      String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model User{
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  role Role
+  refreshToken String? // for refresh token
+  isBanned Boolean @default(false)
+  createdAt DateTime @default(now())
+  medicines Medicine[] // seller er medicine
+  reviews Review[]
+  orders Order[]
+}
+model Category{
+  id String @id @default(uuid())
+  name String @unique
+  medicines Medicine[]
+}
+// user er admin medicine sell korte parbe
+model Medicine{
+  id String @id @default(uuid())
+  name String
+  description String
+  price Float
+  stock Int
+  categoryId String
+  category Category @relation(fields: [categoryId] , references: [id])
+  sellerId String
+  seller User @relation(fields: [sellerId], references: [id])
+  reviews Review[]
+  medicineOrders OrderItem[]
+}
+// ke order korce , kon medicine order korche
+model Order{
+  id String @id @default(uuid())
+  totalPrice Float
+  createdAt DateTime @default(now())
+  status OrderStatus @default(PLACED)
+ 
+  customerId String
+  customer User @relation(fields: [customerId], references: [id])
+   items OrderItem[]
+}
+model OrderItem{
+  id String @id @default(uuid())
+  orderId String
+  medicineId String
+  quantity Int
+  price Float
+  order Order @relation(fields: [orderId], references: [id])
+  medicine Medicine @relation(fields: [medicineId], references: [id])
+// join korar somoi use hoi
+  @@index([orderId])
+  @@index([medicineId])
+}
+
+model Review{
+  id String @id @default(uuid())
+  rating Int
+  comment String
+  createdAt DateTime @default(now())
+  medicineId String
+  userId String
+  medicine Medicine @relation(fields: [medicineId], references:[id]) 
+  user User @relation(fields: [userId], references: [id])
+  // ek user ek medicine er jonno ekta review dite parbe
+  @@unique([medicineId, userId])
+}
+
+enum OrderStatus{
+  PLACED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum Role {
+    CUSTOMER
+    ADMIN
+    SELLER
 }
